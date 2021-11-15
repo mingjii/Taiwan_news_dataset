@@ -194,11 +194,12 @@ REPORTER_PATTERNS: List[re.Pattern] = [
     # This observation is made with `url_pattern = 1200000, 1200001, 1200002,
     # 1200012, 1200021, 1200025, 1200057, 1200071, 1200085, 1200115, 1200125,
     # 1200134, 1200161, 1200181, 1200286, 1200474, 1200501, 2112150, 1200554,
-    # 1200581, 1200621, 261, 7626, 520, 379, 1021, 9616`.
+    # 1200581, 1200621, 261, 7626, 520, 379, 1021, 9616, 228`.
     re.compile(
         r'(?:(?:東森新聞)?(?:實習|振道)?記者|(?:網搜|寵物)小組|'
-        + r'(?:影視|影劇|體育|運動|國際|社[群會]|大陸(?:新聞)?|娛樂|地方|生活|要聞|財經|政治|旅遊|新聞節目|消費)中心)'
-        + r'([\w、\s]*?)/.*?(?:綜合)?(?:報導|編譯)(?:、攝影)?',
+        + r'(?:影視|影劇|科技|體育|運動|國際|社[群會]|大陸(?:新聞)?'
+        + r'|娛樂|地方|生活|要聞|財經|政治|旅遊|新聞節目|消費)中心)'
+        + r'([\w、\s]*?)/.*?(?:綜合)?(?:報導|編譯)(?:[、.]攝影)?',
     ),
     # Reporter name with leading English characters.  Only English characters
     # can have whitespace in between, other characters cannot.
@@ -212,9 +213,13 @@ REPORTER_PATTERNS: List[re.Pattern] = [
     # This observation is made with `url_pattern = 1200028, 1200034, 1200168,
     # 1200197, 1200260, 1200280, 1200297, 1200436, 1200592`.
     re.compile(
-        r'(?:(?:圖、?|撰)?文(?:、?圖)?|彙整整理|編輯)/(?:(?:藥|護理)師)?(?:特約撰述\s*)?([\w、]*?)'
-        + r'(?:(?:提供|摘自|圖片|\s*\S*觀點)\S*)?(?:\([^)]*\))?\s+'
+        r'(?:(?:圖、?|撰)?文(?:、?圖)?|彙整整理|編輯|健康醫療網)/'
+        + r'(?:(?:藥|護理)師)?(?:特約撰述\s*)?([\w、]*?)'
+        + r'(?:(?:提供|摘自|圖片|\s*\S*觀點|報導)\S*)?(?:\([^)]*\))?\s+'
     ),
+    # 專欄作者
+    # This observation is made with `url_pattern = 10716`.
+    re.compile(r'●作者:?(\S+?)[,、;。]\S*'),
 ]
 ARTICLE_SUB_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # Remove captions.  This is still needed even if we have
@@ -225,19 +230,19 @@ ARTICLE_SUB_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # match as much text as possible.  Note that parentheses inside parenthese
     # are allowed.
     # This observation is made with `url_pattern = 1200012, 1200028, 1200192,
-    # 1200193, 1200278, 2112150, 520`.
+    # 1200193, 1200278, 2112150, 520, 7296`.
     (
         re.compile(
-            r'[▲▼►]+(.*?\([組合圖影片相照資料來源翻攝採訪撰稿剪輯轉][^)]*\)([^()]+\))?|\s*\S+)'
+            r'[▲▼►]+(.*?\([組合圖影片相照資料來源翻攝採訪撰稿剪輯轉][^)]*\)([^()]+\))?|\s*\S+)?'
             + r'((?<=[a-zA-Z])[a-zA-Z\d\s]+)?\s*',
         ),
         ' ',
     ),
     # Remove reference hint at the end.
     # This observation is made with `url_pattern = 8565, 9616, 5043, 5452,
-    # 10034`.
+    # 10034, 8680`.
     (
-        re.compile(r'([◎※]+|(張老師|(自殺防治諮詢)?安心)專線|請快來「ETtoday)\S*$'),
+        re.compile(r'([◎※]+|\S*(張老師|(自殺防治|安心))專線|請快來「ETtoday)\S*$'),
         ' ',
     ),
     # Remove list symbols.
@@ -270,13 +275,14 @@ ARTICLE_SUB_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # Remove paragraphs contains additional informations.
     # This observation is made with `url_pattern = 1200022, 1200132, 1200152,
     # 1200161, 1200168, 1200193, 1200234, 1200237, 1200267, 1200392, 1200403,
-    # 1200426, 1200436, 1200526, 1200577, 1200579, 7427`.
+    # 1200426, 1200436, 1200526, 1200577, 1200579, 7427, 9279, 9444`.
     (
         re.compile(
-            r'(^|[\s.])(《?(ETtoday新聞雲|ET FASHION)》?提醒您?|\*[圖片、資料]+來源|到這裡找'
-            + r'|這裡悶、那裏痛,親友說吃這個藥卡有效|(作者|摘自|Photo|BLOG|粉絲頁|FB|附註)\s*:\s*|鎖定每日刊文'
+            r'(^|[\s\.])(《?(ETtoday新聞雲|ET FASHION)》?提醒您?|\*[圖片、資料]+來源|到這裡找'
+            + r'|這裡悶、那裏痛,親友說吃這個藥卡有效|(閱讀前請服用|作者|摘自|Photo|BLOG|粉絲頁|FB|附註)\s*:\s*'
+            + r'|鎖定每日刊文'
             + r'|《?ETtoday寵物雲》?期許每個人都能更重視生命|(自殺防治諮詢安心|生命線協談)專線|歡迎加入\S+:'
-            + r'|\(?(圖|攝?影|撰文)/|\*+以下有|影片恐會引起部分讀者不適,請自行斟酌觀看|影音連結)\S+',
+            + r'|\(?(圖|攝?影|撰文)/|\*+以下有|影片恐會引起部分讀者不適,請自行斟酌觀看|影音連結|本報)\S+',
             re.IGNORECASE,
         ),
         ' ',
@@ -306,9 +312,9 @@ ARTICLE_SUB_PATTERNS: List[Tuple[re.Pattern, str]] = [
         '',
     ),
     # Remove editor notes with slash `/` at the end of news article.
-    # This observation is made with `url_pattern = 1200090, 1200492`.
+    # This observation is made with `url_pattern = 1200090, 1200492, 97467`.
     (
-        re.compile(r'\s([圖文]|Text|Photo)/.*$', re.IGNORECASE),
+        re.compile(r'\s([圖文]|Text|Photo|\S*?官網)/.*$', re.IGNORECASE),
         ' ',
     ),
     # Remove recommendations and additional informations at the end of news
@@ -319,15 +325,16 @@ ARTICLE_SUB_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # 1200265, 1200278, 1200311, 1200318, 1200321, 1200362, 1200413, 1200436,
     # 1200442, 1200452, 1200470, 1200474, 1200510, 1200511, 1200521, 1200526,
     # 1200534, 1200547, 1200558, 1200563, 1200578, 1200579, 1200591, 1200594
-    # 5210, 3728, 1021, 3186`.
+    # 5210, 3728, 1021, 3186, 9156, 4634, 89022`.
     (
         re.compile(
             r'(看?更多(圖片|時尚藝術資訊|精[彩采](影音|內容|報導)|活動訊息|健康訊息|\S+?新消息,)(都在|請洽)?'
-            + r'|(商品介紹|活動詳情|聯繫窗口|服務諮詢專線|\S*(售票|店家)資訊|活動(時間|辦法)|作者介紹|開放時間|門票):'
+            + r'|[^。!\s]*?(商品介紹|活動詳情|聯繫窗口|服務諮詢專線|(售票|店家)資訊|活動(時間|辦法)'
+            + r'|作者介紹|開放時間|門票|\S*名單如下|資料來源):'
             + r'|\(?本文(由|原刊|(轉載|摘)自|經(授權)?|作者:)|\S*以上言論不代表本網立場|\S+—基本資料'
             + r'|【(貼心提醒|延伸閱讀|更多新聞)】|本集.ETtoday看電影.|\S+>{3,}|\S+★|\[info\]'
             + r'|這場我有另外個選項,有興趣讀者|\S+詳細活動內容|\*關於\S+\s*詳細介紹|如遇緊急狀況\S+?聯絡資料如下'
-            + r'|\(?(完整|系列)(文章|報導)[請可]|相關資訊可至|延伸閱讀|熱門點閱》|原文出處|你可能也想看'
+            + r'|\(?(完整|系列)(文章|報導)[請可]|相關資訊可至|延伸閱讀|熱門點閱》|原文(出處|網址)|你可能也想看'
             + r'|\*《ETtoday新聞雲》|好文推薦|關於《(雲端最前線|慧眼看天下)》|\S*?投票網址).*?$',
         ),
         ' ',
@@ -418,6 +425,12 @@ ARTICLE_SUB_PATTERNS: List[Tuple[re.Pattern, str]] = [
     (
         re.compile(r'((?<=\s)[\da-zA-Z\u4e00-\u9fff])+$'),
         ' ',
+    ),
+    # 公司財政報告日期跟時間之間沒有空格
+    # This observation is made with `url_pattern = 94529, 98640, 94809`.
+    (
+        re.compile(r'^(發言時間\s\d+?/\d{2}/\d{2})(?=\d)'),
+        r'\1 ',
     ),
 ]
 
